@@ -1,0 +1,19 @@
+sequence_to_test:
+  seq_1: "./Data/Aspergillus_flavus.fna"
+  seq_2: "./Data/Cryptococcus_amylolentus.fna"
+  seq_3: "./Data/Escherichia_coli_H20.fna"
+  seq_4: "./Data/Staphylococcus_aureus.fna"
+scores:
+allignment_parameters:
+  a: [5,-2,-50,-40]
+  b: [3,-1,-50,-40]
+  c: [5,-2,-90,-50]
+  d: [3,-1,-90,-50]
+ant_parameters:
+  pop_size: 100
+  max_generations: 50
+  seed: 10
+  dysplay: True
+  evaporatin_rate: 0.4
+  learning_rate: 0.1
+    
