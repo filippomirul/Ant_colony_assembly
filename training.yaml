@@ -13,6 +13,6 @@ ant_parameters:
   max_generations: 50
   seed: 10
   dysplay: True
-  evaporatin_rate: 0.4
-  learning_rate: 0.1
+  evaporatin_rate: 0.6
+  learning_rate: 0.2
 scores:
