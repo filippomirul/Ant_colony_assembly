@@ -9,10 +9,10 @@ allignment_parameters:
   c: [5,-2,-90,-50]
   d: [3,-1,-90,-50]
 ant_parameters:
-  pop_size: 100
-  max_generations: 50
-  seed: 10
+  pop_size: [150, 130, 110, 90, 70]
+  max_generations: [60, 50, 40]
+  seed: 62
   dysplay: True
-  evaporatin_rate: 0.6
-  learning_rate: 0.2
+  evaporatin_rate: [0.7, 0.6, 0.5, 0.4]
+  learning_rate: [0.1, 0.2, 0.3, 0.5]
 scores:
