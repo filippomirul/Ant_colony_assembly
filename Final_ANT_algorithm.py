@@ -263,21 +263,21 @@ class Assembly_problem():
     
 import inspyred
 # from utils.utils_07.exercise_1 import *
-from utils.utils_07.plot_utils import *
+# from utils.utils_07.plot_utils import *
 
 import collections
 collections.Iterable = collections.abc.Iterable
 collections.Sequence = collections.abc.Sequence
 
-def run_simulation(sequence: str, coverage = 6, population: int, num_max_generations: int,
-                    seed_r:int, dysplay=True, evapor_rate:int, rate_of_learning: int, length_reads:int):
+def run_simulation(sequence: str, pop:int, num_max_generations: int,
+                    seed_r:int, evapor_rate:int, rate_of_learning: int, length_reads:int, dysplay=True, coverage = 6,):
     """This is the function which run the entire algorithm
     sequence: complete sequence of the genome
     coverage: coverage of the allignment
     """
 
     # common parameters
-    pop_size = population
+    pop_size = pop
     max_generations = num_max_generations
     seed = seed_r
     prng = Random(seed)
@@ -292,7 +292,7 @@ def run_simulation(sequence: str, coverage = 6, population: int, num_max_generat
     expected_length = len(ref)
     problem = Assembly_problem(reads = reads, experimental_length = expected_length)
     ac = inspyred.swarm.ACS(prng, problem.components)
-    ac.observer = [plot_observer]
+    # ac.observer = [plot_observer]
     ac.terminator = inspyred.ec.terminators.generation_termination
 
 
@@ -322,7 +322,8 @@ def run_simulation(sequence: str, coverage = 6, population: int, num_max_generat
 
 
 ref = """ATGGAGGAGCCGCAGTCAGATCCTAGCGTCGAGCCCCCTCTGAGTCAGGAAACATTTTCAGACCTATGGAAACTACTTCCTGAAAACAACGTTCTGTCCCCCTTGCCGTCCCAAGCAATGGATGATTTGATGCTGTCCCCGGACGATATTGAACAATGGTTCACTGAAGACCCAGGTCCAGATGAAGCTCCCAGAATGCCAGAGGCTGCTCCCCCCGTGGCCCCTGCACCAGCAGCTCCTACACCGGCGGCCCCTGCACCAGCCCCCTCCTGGCCCCTGTCATCTTCTGTCCCTTCCCAGAAAACCTACCAGGGCAGCTACGGTTTCCGTCTGGGCTTCTTGCATTCTGGGACAGCCAAGTCTGTGACTTGCACGTACTCCCCTGCCCTCAACAAGATGTTTTGCCAACTGGCCAAGACCTGCCCTGTGCAGCTGTGGGTTGATTCCACACCCCCGCCCGGCACCCGCGTCCGCGCCATGGCCATCTACAAGCAGTCACAGCACATGACGGAGGTTGTGAGGCGCTGCCCCCACCATGAGCGCTGCTCAGATAGCGATGGTCTGGCCCCTCCTCAGCATCTTATCCGAGTGGAAGGAAATTTGCGTGTGGAGTATTTGGATGACAGAAACACTTTTCGACATAGTGTGGTGGTGCCCTATGAGCCGCCTGAGGTTGGCTCTGACTGTACCACCATCCACTACAACTACATGTGTAACAGTTCCTGCATGGGCGGCATGAACCGGAGGCCCATCCTCACCATCATCACACTGGAAGACTCCAGTGGTAATCTACTGGGACGGAACAGCTTTGAGGTGCGTGTTTGTGCCTGTCCTGGGAGAGACCGGCGCACAGAGGAAGAGAATCTCCGCAAGAAAGGGGAGCCTCACCACGAGCTGCCCCCAGGGAGCACTAAGCGAGCACTGCCCAACAACACCAGCTCCTCTCCCCAGCCAAAGAAGAAACCACTGGATGGAGAATATTTCACCCTTCAGATCCGTGGGCGTGAGCGCTTCGAGATGTTCCGAGAGCTGAATGAGGCCTTGGAACTCAAGGATGCCCAGGCTGGGAAGGAGCCAGGGGGGAGCAGGGCTCACTCCAGCCACCTGAAGTCCAAAAAGGGTCAGTCTACCTCCCGCCATAAAAAACTCATGTTCAAGACAGAAGGGCCTGACTCAGACTGA"""
-reads = comstum_reads(ref, length_reads = 130, verbose = True, coverage = 6)
+new_try = ref[:500]
+reads = comstum_reads(new_try, length_reads = 80, verbose = True, coverage = 6)
 
 # common parameters
 pop_size = 100
@@ -341,7 +342,7 @@ args["fig_title"] = "ACS"
 expected_length = len(ref)
 problem = Assembly_problem(reads = reads, experimental_length = expected_length)
 ac = inspyred.swarm.ACS(prng, problem.components)
-ac.observer = [plot_observer]
+# ac.observer = [plot_observer]
 ac.terminator = inspyred.ec.terminators.generation_termination
 
 
@@ -355,17 +356,17 @@ final_pop = ac.evolve(generator=problem.constructor,
                       learning_rate=learning_rate,**args)
 best_ACS = max(ac.archive)
 
-print(best_ACS.candidate)
+# print(best_ACS.candidate)
 d = consensus_reconstructor(path = best_ACS.candidate, reads=reads, positions=eval_allign(reads))[1]
-print(len(d))
+# print(len(d))
 a = pairwise2.align.localms(d, ref[1:200], 3,-1,-3,-2)[0]
-print(a[0])
-print(a[1])
-print(a[2])
+# print(a[0])
+# print(a[1])
+# print(a[2])
 
-new_file = open("nameOFbacteerium", "w")
-results_to_write = ["The real sequence\n", ref, "Our reconstructed sequence:\n", d,
-                     "Score of the allignment after the reconstruction:\n", a[2]]
+new_file = open("Ref.txt", "w")
+results_to_write = ["The real sequence\n", str(ref), "Our reconstructed sequence:\n", str(d),
+                     "Score of the allignment after the reconstruction:\n", str(a[2])]
 new_file.writelines(results_to_write)
 new_file.close()
 
