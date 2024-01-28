@@ -1,0 +1,4 @@
+match: 3
+mis-match: -1
+gap_opening: -3	           if a gap is introduced
+gap_extension: -2	              if a gap is extended
