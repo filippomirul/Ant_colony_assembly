@@ -18,9 +18,6 @@ import seaborn as sns
 import os
 import sys
 import inspyred
-# from utils.utils_07.exercise_1 import *
-# from utils.utils_07.plot_utils import *
-
 import collections
 collections.Iterable = collections.abc.Iterable
 collections.Sequence = collections.abc.Sequence
@@ -29,7 +26,7 @@ collections.Sequence = collections.abc.Sequence
 def comstum_reads(seq: str, length_reads = 10, coverage = 5, verbose = False) -> list:
     
     """The function split the sequence in input in reads.
-    The splitting is done using random numbers, the amount of reds is given by: (len(seq)/length_read)*coverage.
+    The splitting is done using random numbers, the amount of reads is given by: (len(seq)/length_read)*coverage.
     """
 
     number_of_reads = int(len(seq)/length_reads) * coverage
@@ -46,9 +43,10 @@ def comstum_reads(seq: str, length_reads = 10, coverage = 5, verbose = False) ->
                 y[j] += 1 
         sns.set_theme(style="darkgrid")
         sns.lineplot(y)
-        print(f"There are {y.count(0)} bases that are not have been transcriped.")
+        print(f"There are {y.count(0)} bases that have not been transcriped.")
 
     return reads
+
 
 def eval_allign(reads:list, par = [2, -5, -22, -5]):
     
@@ -272,6 +270,7 @@ class Assembly_problem():
                             fitness.append(total)
             return fitness
 
+
 def run_simulation(sequence: str, pop:int, num_max_generations: int,
                     seed_r:int, evapor_rate:int, rate_of_learning: int, read_length:int, desired_coverage:int, display=True):
     """This is the function which runs the entire algorithm.
@@ -296,7 +295,7 @@ def run_simulation(sequence: str, pop:int, num_max_generations: int,
     expected_length = len(sequence)
     problem = Assembly_problem(reads = reads, experimental_length = expected_length)
     ac = inspyred.swarm.ACS(prng, problem.components)
-    # ac.observer = [plot_observer]
+    ac.observer = [plot_observer]
     ac.terminator = inspyred.ec.terminators.generation_termination
     final_pop = ac.evolve(generator=problem.constructor, 
                         evaluator=problem.evaluator, 
@@ -337,19 +336,19 @@ def run_simulation(sequence: str, pop:int, num_max_generations: int,
 
     return
 
-#### RUNNER ####
 
-# default parameters and input
-
-## input sequence: by default it is not a genome, but a short 280 bp sequence of TP53, hosted in the Data folder together with longer genomic sequences
+# input sequence management: by default it is not a genome, but a short 280 bp sequence of TP53, hosted in the Data folder together with longer genomic sequences
 os.chdir(sys.path[0])                                               # changes working directory to directory of this python script 
 support_list = []                                                   # holds the content of the file, line - wise
-with open("./Data/TP53_first_280.txt", "r") as ref_handler:         # opens default file from the Data folder; the latter contains all test genomes + the short 280 bp TP53 sequence
+with open("./Data/TP53.txt", "r") as ref_handler:         # opens default file from the Data folder; the latter contains all test genomes + the short 280 bp TP53 sequence
     for line in ref_handler:
         support_list.append(line)
 ref = "".join(support_list[1:]).replace("\n", "")                   # joins the content of the support list into a single string, skipping its first element (sequence header)
+ref = ref[:500]                                                     # only a small nunber of bases considered for TP53 (in the report a run with 900bp was performed)
 
-## other parameters
+## Sequential call of the whole algorithm ##
+
+# common parameters initialization
 pop_size_default = 100
 max_generations_default = 50
 seed_default = 10
@@ -358,12 +357,67 @@ display_default = True
 length_read_test = 160
 coverage_default = 6
 
-## ACS specific parameters
+## ACS specific parameters initialization
 evaporation_rate_default = 0.4
 learning_rate_default = 0.1
 
-# runner
-run_simulation(sequence = ref, pop = pop_size_default, num_max_generations = max_generations_default, seed_r = seed_default, evapor_rate = evaporation_rate_default, 
-               rate_of_learning = learning_rate_default, read_length = length_read_test , display=True, desired_coverage = coverage_default)
+# generate the reads from the input sequence
+args = {}
+args["fig_title"] = "ACS"
+reads = comstum_reads(ref, length_reads = length_read_test, verbose = True, coverage = coverage_default)
+
+from utils.utils_07.exercise_1 import *
+from utils.utils_07.plot_utils import *
+
+# run ACS
+expected_length = len(ref)
+problem = Assembly_problem(reads = reads, experimental_length = expected_length)
+ac = inspyred.swarm.ACS(prng_default, problem.components)
+ac.observer = [plot_observer]
+ac.terminator = inspyred.ec.terminators.generation_termination
+final_pop = ac.evolve(generator=problem.constructor, 
+                    evaluator=problem.evaluator, 
+                    bounder=problem.bounder,
+                    maximize=problem.maximize, 
+                    pop_size=pop_size_default,
+                    max_generations=max_generations_default,
+                    evaporation_rate=evaporation_rate_default,
+                    learning_rate=learning_rate_default,**args)
+best_ACS = max(ac.archive)
+
+# reconstruct sequence of best candidate
+reconstructed_seq = consensus_reconstructor(path = best_ACS.candidate, reads=reads, positions=eval_allign(reads))[1]
+
+# perform local alignment between reconstructed best candidate and reference sequence
+final_alignment = pairwise2.align.localms(reconstructed_seq, ref, 3,-1,-3,-2)[0]
+
+# write results to "assembly_results" file
+with open("assembly_results", "w") as results_file:
+    results_to_write = ["Reference sequence\n", ref, "\n", "\n","Sequence reconstructed by ACO assembler:\n", reconstructed_seq, "\n", "\n",
+                    "Length of the reconstructed sequence:\n", str(len(reconstructed_seq)), "\n", "\n", "Score of the alignment:\n", str(final_alignment[2]), "\n", "\n"]
+    results_file.writelines(results_to_write)
+    global_ref = final_alignment[1]                                                                                            # the ref sequence, as in the global alignment
+    global_reconstructed = final_alignment[0]                                                                                  # the reconstructed sequence, as in the global alignment
+    splitted_global_ref = [global_ref[i:i + 100] for i in range(0, len(global_ref), 100)]                                      # the first, split every 100pb
+    splitted_global_reconstructed = [global_reconstructed[i:i + 100] for i in range(0, len(global_reconstructed), 100)]        # the second, split every 100bp
+
+    mism_counter = 0
+    for i in range(len(global_reconstructed)):                                                                                 # small script to count number of matches
+        if global_reconstructed[i] == global_ref[i]:
+            mism_counter = mism_counter + 1
+    perc_of_matches = (mism_counter / len(global_ref))*100
+    results_file.writelines(["Percentage of matches:\n", str(perc_of_matches), "\n", "\n"])
+
+    results_file.writelines (["Local alignment:\n", "\n"])                                                                     # small script to print decently the local alignment
+    for i in range(len(splitted_global_ref)):
+        results_file.write("reference")
+        results_file.write("\n")
+        results_file.write(splitted_global_ref[i])
+        results_file.write("\n")
+        results_file.write(splitted_global_reconstructed[i])
+        results_file.write("\n")
+        results_file.write("reconstructed")
+        results_file.write("\n")
+        results_file.write("\n")
 
 # results are saved in the assembly_results file
