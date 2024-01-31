@@ -43,7 +43,7 @@ def comstum_reads(seq: str, length_reads = 10, coverage = 5, verbose = False) ->
                 y[j] += 1 
         sns.set_theme(style="darkgrid")
         sns.lineplot(y)
-        print(f"There are {y.count(0)} bases that have not been transcriped.")
+        print(f"There are {y.count(0)} bases that have not been transcribed.")
 
     return reads
 
@@ -271,80 +271,15 @@ class Assembly_problem():
             return fitness
 
 
-def run_simulation(sequence: str, pop:int, num_max_generations: int,
-                    seed_r:int, evapor_rate:int, rate_of_learning: int, read_length:int, desired_coverage:int, display=True):
-    """This is the function which runs the entire algorithm.
-    sequence: complete sequence of the genome
-    coverage: coverage of the allignment
-    """
-    # common parameters
-    pop_size = pop
-    max_generations = num_max_generations
-    seed = seed_r
-    prng = Random(seed)
-    # ACS specific parameters
-    evaporation_rate = evapor_rate
-    learning_rate = rate_of_learning
-
-    # generate the reads from the input sequence
-    args = {}
-    args["fig_title"] = "ACS"
-    reads = comstum_reads(sequence, length_reads = read_length, verbose = True, coverage = desired_coverage)
-
-    # run ACS
-    expected_length = len(sequence)
-    problem = Assembly_problem(reads = reads, experimental_length = expected_length)
-    ac = inspyred.swarm.ACS(prng, problem.components)
-    ac.observer = [plot_observer]
-    ac.terminator = inspyred.ec.terminators.generation_termination
-    final_pop = ac.evolve(generator=problem.constructor, 
-                        evaluator=problem.evaluator, 
-                        bounder=problem.bounder,
-                        maximize=problem.maximize, 
-                        pop_size=pop_size,
-                        max_generations=max_generations,
-                        evaporation_rate=evaporation_rate,
-                        learning_rate=learning_rate,**args)
-    best_ACS = max(ac.archive)
-
-    # reconstruct sequence of best candidate
-    reconstructed_seq = consensus_reconstructor(path = best_ACS.candidate, reads=reads, positions=eval_allign(reads))[1]
-
-    # perform global alignment between reconstructed best candidate and reference sequence
-    final_alignment = pairwise2.align.globalms(reconstructed_seq, ref, 3,-1,-3,-2)[0]
-
-    # write results to "assembly_results" file
-    with open("assembly_results", "w") as results_file:
-        results_to_write = ["Reference sequence\n", ref, "\n", "\n","Sequence reconstructed by ACO assembler:\n", reconstructed_seq, "\n", "\n",
-                        "Length of the reconstructed sequence:\n", str(len(reconstructed_seq)), "\n", "\n", "Score of the alignment:\n", str(final_alignment[2]), "\n", "\n", 
-                        "Global alignment:\n", "\n"]
-        results_file.writelines(results_to_write)
-        global_ref = final_alignment[1]                                                                                            # the ref sequence, as in the global alignment
-        global_reconstructed = final_alignment[0]                                                                                  # the reconstructed sequence, as in the global alignment
-        splitted_global_ref = [global_ref[i:i + 100] for i in range(0, len(global_ref), 100)]                                      # the first, split every 100pb
-        splitted_global_reconstructed = [global_reconstructed[i:i + 100] for i in range(0, len(global_reconstructed), 100)]        # the second, split every 100bp
-        for i in range(len(splitted_global_ref)):
-            results_file.write("reference")
-            results_file.write("\n")
-            results_file.write(splitted_global_ref[i])
-            results_file.write("\n")
-            results_file.write(splitted_global_reconstructed[i])
-            results_file.write("\n")
-            results_file.write("reconstructed")
-            results_file.write("\n")
-            results_file.write("\n")
-
-    return
-
-
 # input sequence management: by default it is not a genome, but a short 280 bp sequence of TP53, hosted in the Data folder together with longer genomic sequences
 os.chdir(sys.path[0])                                               # changes working directory to directory of this python script 
 support_list = []                                                   # holds the content of the file, line - wise
-with open("./Data/TP53.txt", "r") as ref_handler:         # opens default file from the Data folder; the latter contains all test genomes + the short 280 bp TP53 sequence
+with open("./Data/TP53.txt", "r") as ref_handler:                   # opens default file from the Data folder; the latter contains all test genomes + the short 280 bp TP53 sequence
     for line in ref_handler:
         support_list.append(line)
 ref = "".join(support_list[1:]).replace("\n", "")                   # joins the content of the support list into a single string, skipping its first element (sequence header)
 ref = ref[:500]                                                     # only a small nunber of bases considered for TP53 (in the report a run with 900bp was performed)
+
 
 ## Sequential call of the whole algorithm ##
 
@@ -396,25 +331,25 @@ with open("assembly_results", "w") as results_file:
     results_to_write = ["Reference sequence\n", ref, "\n", "\n","Sequence reconstructed by ACO assembler:\n", reconstructed_seq, "\n", "\n",
                     "Length of the reconstructed sequence:\n", str(len(reconstructed_seq)), "\n", "\n", "Score of the alignment:\n", str(final_alignment[2]), "\n", "\n"]
     results_file.writelines(results_to_write)
-    global_ref = final_alignment[1]                                                                                            # the ref sequence, as in the global alignment
-    global_reconstructed = final_alignment[0]                                                                                  # the reconstructed sequence, as in the global alignment
-    splitted_global_ref = [global_ref[i:i + 100] for i in range(0, len(global_ref), 100)]                                      # the first, split every 100pb
-    splitted_global_reconstructed = [global_reconstructed[i:i + 100] for i in range(0, len(global_reconstructed), 100)]        # the second, split every 100bp
+    local_ref = final_alignment[1]                                                                                          # the ref sequence, as in the local alignment
+    local_reconstructed = final_alignment[0]                                                                                # the reconstructed sequence, as in the local alignment
+    splitted_local_ref = [local_ref[i:i + 100] for i in range(0, len(local_ref), 100)]                                      # the first, split every 100pb
+    splitted_local_reconstructed = [local_reconstructed[i:i + 100] for i in range(0, len(local_reconstructed), 100)]        # the second, split every 100bp
 
     mism_counter = 0
-    for i in range(len(global_reconstructed)):                                                                                 # small script to count number of matches
-        if global_reconstructed[i] == global_ref[i]:
+    for i in range(len(local_reconstructed)):                                                                               # small script to count number of matches
+        if local_reconstructed[i] == local_ref[i]:
             mism_counter = mism_counter + 1
-    perc_of_matches = (mism_counter / len(global_ref))*100
+    perc_of_matches = (mism_counter / len(local_ref))*100
     results_file.writelines(["Percentage of matches:\n", str(perc_of_matches), "\n", "\n"])
 
-    results_file.writelines (["Local alignment:\n", "\n"])                                                                     # small script to print decently the local alignment
-    for i in range(len(splitted_global_ref)):
+    results_file.writelines (["Local alignment:\n", "\n"])                                                                  # small script to print decently the local alignment
+    for i in range(len(splitted_local_ref)):
         results_file.write("reference")
         results_file.write("\n")
-        results_file.write(splitted_global_ref[i])
+        results_file.write(splitted_local_ref[i])
         results_file.write("\n")
-        results_file.write(splitted_global_reconstructed[i])
+        results_file.write(splitted_local_reconstructed[i])
         results_file.write("\n")
         results_file.write("reconstructed")
         results_file.write("\n")
